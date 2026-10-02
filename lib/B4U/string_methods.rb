@@ -21,6 +21,8 @@ class String
 
   def green = colorize(32)
 
+  def yellow = colorize(33)
+
   def magenta = colorize(35)
 
   def cyan = colorize(36)

@@ -13,4 +13,4 @@ gem 'rubocop', '~> 1.78'
 gem 'simplecov', '~> 0.22.0'
 gem 'simplecov-console', '~> 0.9.3'
 
-gem "rspec-sonarqube-formatter", "~> 1.6"
+gem 'rspec-sonarqube-formatter', '~> 1.6'

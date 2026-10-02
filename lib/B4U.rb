@@ -2,6 +2,7 @@
 
 require_relative 'B4U/runner'
 require_relative 'B4U/string_methods'
+require_relative 'B4U/condition'
 require_relative 'B4U/linter'
 require_relative 'B4U/version'
 require_relative 'B4U/error'
@@ -11,7 +12,14 @@ module B4U
   def self.lint(config:)
     ProjectChecker.ensure_project_root!(config['required-files']) unless config['required-files'].nil?
     puts "Project structure valid, running #{config['linters'].count} linting steps...".green
-    linters = config['linters'].map do |linter|
+    conditions = Condition.from_config(config['conditions'])
+    met = Condition.check(conditions, config['linters'])
+    # Linters whose run_if condition was not met are skipped and never reach the runner
+    skipped, to_run = config['linters'].partition { |linter| linter['run_if'] && !met[linter['run_if']] }
+    skipped.each do |linter|
+      puts "🦘 - #{linter['name']} (skipped: #{conditions[linter['run_if']].label})".yellow
+    end
+    linters = to_run.map do |linter|
       Linter.new(
         name: linter['name'],
         command: linter['command'],
@@ -22,7 +30,8 @@ module B4U
 
     runner = LinterRunner.new(linters)
     runner.run_all
-    puts 'All linters passed!'.bg_green
+    summary = skipped.empty? ? 'All linters passed!' : "All linters passed! (#{skipped.count} skipped)"
+    puts summary.bg_green
   end
 
   class ProjectChecker

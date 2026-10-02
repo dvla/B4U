@@ -52,6 +52,54 @@ linters:
 
 **Important:** Tasks run in parallel, so only use read-only commands to avoid conflicts.
 
+### Conditional steps (`conditions` and `run_if`)
+
+Define conditions once at the top of the config, then point linters at them with `run_if: <id>`. Each condition that a linter uses runs once, before any linter starts, so linters sharing a condition don't re-run it.
+
+```yaml
+conditions:
+  ruby-staged:
+    description: "Ruby files staged"   # optional, used for logging
+    command: "! git diff --staged --quiet -- '*.rb'"
+  folder-staged:
+    description: "source-code folder changed"
+    command: "! git diff --staged --quiet -- dir-with-change"
+
+linters:
+  - name: "Rubocop"
+    command: "bundle exec rubocop"
+    run_if: ruby-staged
+  - name: "RSpec"
+    command: "bundle exec rspec"
+    run_if: ruby-staged
+```
+
+Conditions follow the shell exit-code convention:
+
+| Condition exit code | Result |
+|---|---|
+| `0` | Linters using it run |
+| Any other code | Linters using it are skipped 🦘 (never blocks) |
+| `126` / `127` (not executable / command not found) | Broken condition: B4U stops before running any linter |
+
+A `run_if` that names a condition that doesn't exist also stops B4U before anything runs.
+
+Note the `!`: `git diff --quiet` exits `0` when there are *no* changes, so it has to be negated to mean "run if Ruby files are staged".
+```
+
+```sh
+#!/bin/sh
+# exit 0 (run) if any JS files are staged
+if git diff --staged --quiet -- '*.js'; then
+  exit 1
+fi
+exit 0
+```
+
+Conditions run in parallel, so keep them read-only too.
+
+For pre-push, B4U doesn't forward the refs git passes to the hook on stdin, so compare against the upstream instead, e.g. `! git diff --quiet @{u}...HEAD -- '*.rb'`.
+
 ## Usage
 
 ### Command Line Options

@@ -44,11 +44,18 @@ end
 
 def config_file(hook_name)
   <<~YAML
+    # Optional: conditions run once before any linter. A linter with `run_if: <id>`
+    # is skipped when that condition exits non-zero.
+    # conditions:
+    #   ruby-staged:
+    #     description: Ruby files staged
+    #     command: "! git diff --staged --quiet -- source-code-dir"
     linters:
       - placeholder:
         name: Add your pre #{hook_name} tasks to .B4U/#{hook_name}.yml
         command: echo "B4U is working, but you haven't set your pre-#{hook_name} tasks"; exit 1
         ignore: false
+        # run_if: ruby-staged
   YAML
 end
 
@@ -73,7 +80,7 @@ end
 
 def parse_arguments
   options = {}
-  # rubocop:disable Metrics/BlockLength
+  # rubocop:disable-next Metrics/BlockLength
   OptionParser.new do |opts|
     opts.banner = 'Usage: B4U [options]'
 
@@ -117,11 +124,10 @@ def parse_arguments
       options[:config_file] = '.B4U/push.yml'
     end
   end.parse!
-  # rubocop:enable Metrics/BlockLength
   options
 end
 
-def run_B4U(options)
+def run_b4u(options)
   String.enable_colour unless options[:no_colour]
   config = if options[:config_file]
              begin
@@ -139,7 +145,10 @@ end
 
 begin
   options = parse_arguments
-  run_B4U(options)
+  run_b4u(options)
 rescue OptionParser::InvalidOption, OptionParser::InvalidArgument => e
   puts e.message
+rescue ConfigError => e
+  puts e.message.red.bold
+  exit 1
 end
