@@ -1,20 +1,20 @@
 class Linter
-  attr_reader :name, :command, :ignore
+  attr_reader :name, :command, :ignore, :skip_reason
 
-  def initialize(name:, command:, ignore: false)
+  def initialize(name:, command:, ignore: false, skip_reason: nil)
     @name = name
     @command = command
     @ignore = ignore
+    @skip_reason = skip_reason
   end
 
   def run
     console_output, status = Open3.capture2e(command)
     if status.success?
-      puts "✅ - #{name}".green
+      :passed
     elsif ignore
-      puts "❌ - #{name} (ignored)".magenta
+      :ignored
     else
-      puts "❌ - #{name}".red
       raise LinterError.new(linter: name, console_output:)
     end
   end

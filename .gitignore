@@ -6,7 +6,9 @@
 /pkg/
 /spec/reports/
 /tmp/
+/spec/tmp/
 /.idea/
 *.gem
 .rspec_status
 Gemfile.lock
+out/test-report.xml
